@@ -8,7 +8,7 @@ RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 WORKDIR /app
 
-COPY gocron .
+COPY gocron /app/
 
 RUN chown -R app:app ./
 
