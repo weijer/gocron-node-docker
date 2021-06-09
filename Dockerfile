@@ -10,7 +10,7 @@ WORKDIR /app
 
 COPY gocron /app/
 
-RUN chown -R app:app /app/gocron
+RUN chown -R root:root /app/gocron
 
 EXPOSE 5920
 
