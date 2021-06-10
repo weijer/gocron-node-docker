@@ -12,6 +12,6 @@ RUN apk add --no-cache ca-certificates  tzdata bash \
     &&  cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 WORKDIR /app
-EXPOSE 5920
+EXPOSE 5921
 
 ENTRYPOINT ["/app/gocron-node", "-allow-root"]
