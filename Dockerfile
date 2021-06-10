@@ -1,17 +1,37 @@
-FROM alpine:3.7
+FROM golang:1.15-alpine as builder
 
-ENV GOCRON_AGENT_VERSION=v1.5
+RUN apk update \
+    && apk add --no-cache git ca-certificates make bash yarn nodejs
 
-RUN apk add --no-cache ca-certificates  tzdata bash \
-    &&  mkdir -p /app \
-    &&  wget -P /tmp  https://github.com/ouqiang/gocron/releases/download/${GOCRON_AGENT_VERSION}/gocron-node-${GOCRON_AGENT_VERSION}-linux-amd64.tar.gz \
-    &&  cd /tmp \
-    &&  tar  zvxf gocron-node-${GOCRON_AGENT_VERSION}-linux-amd64.tar.gz  \
-    &&  mv /tmp/gocron-node-linux-amd64/gocron-node /app \
-    &&  rm  -rf /tmp/* \
-    &&  cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+RUN go env -w GO111MODULE=on && \
+    go env -w GOPROXY=https://goproxy.cn,direct
 
 WORKDIR /app
-EXPOSE 5921
 
-ENTRYPOINT ["/app/gocron-node", "-allow-root"]
+RUN git clone https://github.com/ouqiang/gocron.git \
+    && cd gocron \
+    && yarn config set ignore-engines true \
+    && make install-vue \
+    && make build-vue \
+    && make statik \
+    && CGO_ENABLED=0 make gocron
+
+FROM alpine:3.12
+
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -S app \
+    && adduser -S -g app app
+
+RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+WORKDIR /app
+
+COPY --from=builder /app/gocron/bin/gocron .
+
+RUN chown -R app:app ./
+
+EXPOSE 5920
+
+USER app
+
+ENTRYPOINT ["/app/gocron", "web"]
